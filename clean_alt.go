@@ -8,6 +8,7 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
+// Create Article structure
 type Sections struct {
 	Header  string
 	Content string
@@ -36,6 +37,7 @@ func main() {
 
 	for _, scraperUrl := range urls {
 
+		//empty containers for our articles
 		article := Article{}
 		sections := []Sections{}
 
@@ -45,6 +47,7 @@ func main() {
 			article.Title = e.Text
 		})
 
+		//organize sections by [header:all consecutive paragraphs]
 		currentHeader := ""
 
 		c.OnHTML("p, h2", func(h *colly.HTMLElement) {
@@ -71,6 +74,7 @@ func groupSections(sections []Sections) []Sections {
 		return groupedSections
 	}
 
+	//keep all consecutive paragraphs associated with the appropriate header
 	currentSection := sections[0]
 	for i := 1; i < len(sections); i++ {
 		if sections[i].Header == currentSection.Header {
@@ -84,9 +88,9 @@ func groupSections(sections []Sections) []Sections {
 	return groupedSections
 }
 
-// ///////////HELPER TO WRITE TO JSON
+// ///////////HELPER TO WRITE TO JSON Lines
 func writeToJSONLinesFile(filename string, data Article) {
-	//file, err := os.Create(filename)
+
 	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -95,32 +99,9 @@ func writeToJSONLinesFile(filename string, data Article) {
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
+
+	//encode on new lines for each iteration to fit Json lines
 	if err := encoder.Encode(data); err != nil {
 		fmt.Println("Error:", err)
 	}
 }
-
-//////////////////////////////////////////////////////
-// encoder := json.NewEncoder(file)
-// for _, article := range data.Article {
-// 	if err := encoder.Encode(article); err != nil {
-// 		fmt.Println("Error:", err)
-//////////////////////////////////////////////////////
-
-//instead of :
-// c.OnHTML("p, h2", func(h *colly.HTMLElement) {
-// 	if h.Name == "h2" {
-// 		currentHeader = h.Text
-// 	} else if h.Name == "p" {
-// 		sections = append(sections, Sections{Header: currentHeader, Content: h.Text})
-// 	}
-// })
-
-//Try this?
-// c.OnHTML("p, h2, ul, ol", func(h *colly.HTMLElement) {
-// 	if h.Name == "h2" {
-// 		currentHeader = h.Text
-// 	} else if h.Name == "p" {
-// 		sections = append(sections, Sections{Header: currentHeader, Content: h.Text})
-// 	}
-// })
